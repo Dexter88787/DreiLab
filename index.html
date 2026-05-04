@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DreiLab">
+<title>DreiLab</title>
+<style>
+  /* ── RESET & BASE ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --navy: #0D1B2A;
+    --navy2: #1A2A3A;
+    --navy3: #243447;
+    --accent: #2DD4BF;
+    --accent2: #14B8A6;
+    --green: #22C55E;
+    --red: #EF4444;
+    --amber: #F59E0B;
+    --bg: #F7F8FA;
+    --card: #FFFFFF;
+    --border: rgba(0,0,0,0.08);
+    --text: #0D1B2A;
+    --text2: #64748B;
+    --text3: #94A3B8;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --radius: 14px;
+    --radius-sm: 10px;
+    --tab-h: 72px;
+  }
+  html, body { height: 100%; overflow: hidden; background: var(--navy); }
+  body {
+    font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    overscroll-behavior: none;
+  }
+
+  /* ── APP SHELL ── */
+  #app { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; background: var(--bg); }
+
+  /* ── STATUS BAR ── */
+  .status-bar {
+    background: var(--navy);
+    padding: env(safe-area-inset-top, 12px) 20px 10px;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    flex-shrink: 0;
+  }
+  .status-brand { color: var(--accent); font-size: 13px; font-weight: 600; letter-spacing: .04em; }
+  .status-date { color: rgba(255,255,255,.45); font-size: 12px; }
+
+  /* ── SCREENS ── */
+  .screens { flex: 1; overflow: hidden; position: relative; }
+  .screen {
+    position: absolute; inset: 0;
+    overflow-y: auto; overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 0 calc(var(--tab-h) + 12px);
+    opacity: 0; pointer-events: none; transform: translateX(20px);
+    transition: opacity .22s ease, transform .22s ease;
+  }
+  .screen.active { opacity: 1; pointer-events: all; transform: translateX(0); }
+
+  /* ── SCREEN HEADERS ── */
+  .screen-header {
+    background: var(--navy);
+    padding: 14px 20px 16px;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .screen-header h1 { color: #fff; font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+  .screen-header p { color: rgba(255,255,255,.4); font-size: 13px; margin-top: 2px; }
+
+  /* ── CONTENT PADDING ── */
+  .content { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .card-pad { padding: 16px; }
+  .card-title {
+    font-size: 12px; font-weight: 600; color: var(--text2);
+    letter-spacing: .06em; text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  /* ── PERIOD TOGGLE ── */
+  .period-toggle {
+    display: flex; background: rgba(255,255,255,.1); border-radius: 10px;
+    padding: 3px; gap: 2px; margin: 0 20px 16px;
+    position: relative;
+  }
+  .period-btn {
+    flex: 1; text-align: center; padding: 7px 4px;
+    border-radius: 8px; font-size: 13px; font-weight: 500;
+    color: rgba(255,255,255,.4); border: none; background: transparent;
+    transition: color .2s ease, transform .15s ease; cursor: pointer;
+    position: relative; z-index: 1;
+  }
+  .period-btn.active {
+    color: var(--navy); font-weight: 700;
+  }
+  .period-btn:not(.active):active { transform: scale(.9); }
+  .period-slider {
+    position: absolute; top: 3px; bottom: 3px;
+    border-radius: 8px; background: var(--accent);
+    box-shadow: 0 2px 8px rgba(45,212,191,.4);
+    transition: left .22s cubic-bezier(.34,1.56,.64,1), width .22s ease;
+    z-index: 0; pointer-events: none;
+  }
+  @keyframes periodPop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.06); }
+    100% { transform: scale(1); }
+  }
+  .period-btn.active { animation: periodPop .3s ease forwards; }
+
+  /* ── STATS GRID ── */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card {
+    background: var(--card); border-radius: var(--radius-sm);
+    padding: 14px; box-shadow: var(--shadow);
+  }
+  .stat-label { font-size: 11px; color: var(--text2); font-weight: 500; margin-bottom: 4px; }
+  .stat-value { font-size: 24px; font-weight: 700; color: var(--text); letter-spacing: -.02em; }
+  .stat-value.green { color: var(--green); }
+  .stat-value.accent { color: var(--accent2); }
+  .stat-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+  /* ── ENTRIES LIST ── */
+  .entry-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 16px; border-bottom: 0.5px solid var(--border);
+    cursor: pointer; transition: background .12s;
+    -webkit-touch-callout: none;
+  }
+  .entry-item:last-child { border-bottom: none; }
+  .entry-item:active { background: #F1F5F9; }
+  .entry-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent); flex-shrink: 0;
+  }
+  .entry-main { flex: 1; }
+  .entry-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .entry-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .entry-amount { font-size: 15px; font-weight: 700; color: var(--green); }
+  .entry-arrow { color: var(--text3); font-size: 16px; }
+
+  /* ── FAB ── */
+  .fab {
+    position: fixed; bottom: calc(var(--tab-h) + 16px); right: 20px;
+    width: 54px; height: 54px; border-radius: 27px;
+    background: var(--navy); border: none;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 20px rgba(13,27,42,.35);
+    cursor: pointer; z-index: 20;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .fab:active { transform: scale(.93); box-shadow: 0 2px 10px rgba(13,27,42,.2); }
+  .fab-icon { color: var(--accent); font-size: 26px; line-height: 1; margin-top: -1px; }
+
+  /* ── TAB BAR ── */
+  .tab-bar {
+    display: flex; background: var(--card);
+    border-top: 0.5px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    height: var(--tab-h);
+    flex-shrink: 0; z-index: 30;
+  }
+  .tab-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 4px; cursor: pointer; border: none; background: transparent;
+    transition: opacity .15s;
+  }
+  .tab-icon { font-size: 22px; transition: transform .2s; }
+  .tab-label { font-size: 10px; font-weight: 500; color: var(--text3); letter-spacing: .01em; }
+  .tab-item.active .tab-label { color: var(--accent2); }
+  .tab-item.active .tab-icon { transform: scale(1.15); }
+
+  /* ── FORM ── */
+  .form-section { display: flex; flex-direction: column; gap: 14px; padding: 16px; }
+  .mode-toggle {
+    display: flex; background: #EFF3F8; border-radius: 10px;
+    padding: 3px; gap: 2px;
+  }
+  .mode-btn {
+    flex: 1; text-align: center; padding: 9px 4px;
+    border-radius: 8px; font-size: 13px; font-weight: 500;
+    color: var(--text2); border: none; background: transparent;
+    transition: all .18s; cursor: pointer;
+  }
+  .mode-btn.active { background: var(--card); color: var(--text); font-weight: 700; box-shadow: var(--shadow); }
+
+  /* ── YES/NO BUTTONS ── */
+  .yn-section { padding: 14px 16px; }
+  .yn-question { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .yn-hint { font-size: 12px; color: var(--text2); margin-bottom: 12px; line-height: 1.4; }
+  .yn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .yn-row:last-child { margin-bottom: 0; }
+  .yn-btn {
+    border-radius: 14px; padding: 15px 10px;
+    border: 1.5px solid var(--border); background: #F7F8FA;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    cursor: pointer; transition: all .18s ease;
+    -webkit-user-select: none;
+  }
+  .yn-btn:active { transform: scale(.93); }
+  .yn-emoji { font-size: 26px; }
+  .yn-text { font-size: 13px; font-weight: 600; color: var(--text2); }
+  .yn-btn.yes.sel {
+    background: #ECFDF5; border-color: #10B981; border-width: 2px;
+    box-shadow: 0 0 0 3px rgba(16,185,129,.12);
+  }
+  .yn-btn.yes.sel .yn-text { color: #065F46; }
+  .yn-btn.no.sel {
+    background: #FEF2F2; border-color: #EF4444; border-width: 2px;
+    box-shadow: 0 0 0 3px rgba(239,68,68,.12);
+  }
+  .yn-btn.no.sel .yn-text { color: #991B1B; }
+  .yn-divider { height: 0.5px; background: var(--border); margin: 4px 0 16px; }
+  .client-fields { display: block; }
+  .day-fields { display: none; }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 12px; font-weight: 600; color: var(--text2); letter-spacing: .03em; }
+  .field input, .field select {
+    background: #F7F8FA; border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    font-size: 16px; color: var(--text); font-family: inherit;
+    outline: none; transition: border-color .15s;
+    width: 100%; -webkit-appearance: none;
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent2); background: #fff; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* ── SECTION COLLAPSE ── */
+  .collapse-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; cursor: pointer;
+    border-bottom: 0.5px solid var(--border);
+    transition: background .12s;
+    -webkit-user-select: none;
+  }
+  .collapse-header:active { background: #F8FAFC; }
+  .collapse-left { display: flex; align-items: center; gap: 10px; }
+  .collapse-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .optional-tag {
+    font-size: 10px; font-weight: 600; padding: 2px 7px;
+    border-radius: 20px; background: #FEF3C7; color: #92400E;
+    letter-spacing: .02em;
+  }
+  .collapse-chevron {
+    font-size: 12px; color: var(--text3);
+    transition: transform .22s ease;
+    display: inline-block;
+  }
+  .collapse-chevron.open { transform: rotate(180deg); }
+  .collapse-body { overflow: hidden; transition: max-height .25s ease, opacity .2s ease; max-height: 0; opacity: 0; }
+  .collapse-body.open { max-height: 2000px; opacity: 1; }
+
+  /* ── COUNTER ROW ── */
+  .counter-list { padding: 4px 0 8px; }
+  .counter-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 11px 16px; border-bottom: 0.5px solid var(--border);
+  }
+  .counter-row:last-child { border-bottom: none; }
+  .counter-info { flex: 1; }
+  .counter-name { font-size: 14px; color: var(--text); font-weight: 500; }
+  .counter-price { font-size: 12px; color: var(--text3); margin-top: 1px; }
+  .counter-ctrl { display: flex; align-items: center; gap: 12px; }
+  .c-btn {
+    width: 30px; height: 30px; border-radius: 15px;
+    border: 1.5px solid var(--border); background: var(--card);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: var(--text2); cursor: pointer;
+    transition: all .12s; -webkit-user-select: none; line-height: 1;
+    font-weight: 300;
+  }
+  .c-btn.plus { background: var(--navy); border-color: var(--navy); color: var(--accent); font-weight: 500; }
+  .c-btn:active { transform: scale(.88); }
+  .c-val {
+    font-size: 17px; font-weight: 700; min-width: 22px; text-align: center;
+    color: var(--text3); transition: color .15s;
+  }
+  .c-val.on { color: var(--accent2); }
+
+  /* ── CUSTOM SERVICE ROW ── */
+  .custom-add {
+    padding: 12px 16px;
+    border-top: 0.5px solid var(--border);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .custom-add-label { font-size: 11px; font-weight: 600; color: var(--text2); letter-spacing: .04em; }
+  .custom-add-row { display: flex; gap: 8px; align-items: center; }
+  .custom-add-row input {
+    flex: 1; background: #F7F8FA; border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 10px 12px; font-size: 14px;
+    color: var(--text); outline: none; font-family: inherit;
+    transition: border-color .15s;
+  }
+  .custom-add-row input:focus { border-color: var(--accent2); background: #fff; }
+  .custom-add-row input.price-input { width: 72px; flex: none; text-align: center; }
+  .custom-add-btn {
+    background: var(--navy); color: var(--accent);
+    border: none; border-radius: 10px; padding: 10px 14px;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    white-space: nowrap; transition: opacity .15s;
+    font-family: inherit;
+  }
+  .custom-add-btn:active { opacity: .7; }
+
+  /* ── SUBTOTAL ── */
+  .subtotal {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 11px 16px; background: #F0FDF4;
+    border-top: 0.5px solid #BBF7D0;
+  }
+  .subtotal-label { font-size: 12px; font-weight: 600; color: #166534; }
+  .subtotal-val { font-size: 15px; font-weight: 800; color: #15803D; }
+
+  /* ── BUTTONS ── */
+  .btn-primary {
+    background: var(--navy); color: #fff;
+    border: none; border-radius: var(--radius);
+    padding: 15px; font-size: 16px; font-weight: 700;
+    width: 100%; cursor: pointer; font-family: inherit;
+    transition: opacity .15s, transform .12s;
+    letter-spacing: -.01em;
+  }
+  .btn-primary:active { opacity: .82; transform: scale(.98); }
+  .btn-ghost {
+    background: transparent; color: var(--text2);
+    border: 1.5px solid var(--border); border-radius: var(--radius);
+    padding: 13px; font-size: 15px; font-weight: 500;
+    width: 100%; cursor: pointer; font-family: inherit;
+    transition: background .12s;
+  }
+  .btn-ghost:active { background: #F1F5F9; }
+  .btn-danger {
+    background: #FEF2F2; color: var(--red);
+    border: 1.5px solid #FCA5A5; border-radius: var(--radius);
+    padding: 13px; font-size: 15px; font-weight: 600;
+    width: 100%; cursor: pointer; font-family: inherit;
+  }
+
+  /* ── STATS SCREEN ── */
+  .source-bar-item { padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .source-bar-item:last-child { border-bottom: none; }
+  .source-bar-top { display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .source-bar-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .source-bar-val { font-size: 13px; font-weight: 700; color: var(--text2); }
+  .source-track { height: 6px; background: #EFF3F8; border-radius: 3px; overflow: hidden; }
+  .source-fill { height: 100%; border-radius: 3px; transition: width .5s ease; }
+
+  .type-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 11px 0; border-bottom: 0.5px solid var(--border);
+  }
+  .type-row:last-child { border-bottom: none; }
+  .type-left { display: flex; align-items: center; gap: 10px; }
+  .type-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .type-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .type-sub { font-size: 11px; color: var(--text2); }
+  .type-right { text-align: right; }
+  .type-count { font-size: 17px; font-weight: 700; color: var(--text); }
+  .type-pct { font-size: 11px; color: var(--text3); }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: calc(var(--tab-h) + 20px); left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--navy); color: #fff;
+    padding: 12px 20px; border-radius: 20px;
+    font-size: 14px; font-weight: 600;
+    opacity: 0; transition: all .3s ease;
+    z-index: 100; white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(0,0,0,.3);
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.error { background: var(--red); }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center; padding: 40px 20px;
+    color: var(--text3); font-size: 14px; line-height: 1.6;
+  }
+  .empty-state .emoji { font-size: 40px; margin-bottom: 12px; display: block; }
+
+  /* ── MODAL / EDIT ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.5);
+    z-index: 50; opacity: 0; pointer-events: none;
+    transition: opacity .22s;
+  }
+  .modal-overlay.show { opacity: 1; pointer-events: all; }
+  .modal-sheet {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--bg); border-radius: 20px 20px 0 0;
+    z-index: 51; transform: translateY(100%);
+    transition: transform .28s cubic-bezier(.32,.72,0,1);
+    max-height: 85dvh; overflow-y: auto;
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+  }
+  .modal-sheet.show { transform: translateY(0); }
+  .modal-handle { width: 36px; height: 4px; background: #CBD5E1; border-radius: 2px; margin: 12px auto 4px; }
+
+  /* ── CONFIG ── */
+  .config-banner {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy3) 100%);
+    margin: 16px; border-radius: var(--radius); padding: 16px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .config-icon { font-size: 28px; }
+  .config-text h3 { color: var(--accent); font-size: 14px; font-weight: 700; }
+  .config-text p { color: rgba(255,255,255,.6); font-size: 12px; margin-top: 3px; line-height: 1.4; }
+
+  /* Scrollbar hide */
+  ::-webkit-scrollbar { display: none; }
+  * { scrollbar-width: none; }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- STATUS BAR -->
+  <div class="status-bar">
+    <span class="status-brand">✂ DreiLab</span>
+    <span class="status-date" id="statusDate"></span>
+  </div>
+
+  <!-- SCREENS -->
+  <div class="screens">
+
+    <!-- ══════════════════════════════════ HOME ══════════════════════════════════ -->
+    <div class="screen active" id="screen-home">
+      <div class="screen-header">
+        <h1>Привіт, Андрій 👋</h1>
+        <p>Результати роботи</p>
+        <div style="height:12px"></div>
+        <div class="period-toggle" id="home-period-toggle">
+          <div class="period-slider" id="home-period-slider"></div>
+          <button class="period-btn active" onclick="setPeriod('day',this,0)">Сьогодні</button>
+          <button class="period-btn" onclick="setPeriod('week',this,1)">Тиждень</button>
+          <button class="period-btn" onclick="setPeriod('month',this,2)">Місяць</button>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Записів</div>
+            <div class="stat-value accent" id="stat-bookings">0</div>
+            <div class="stat-sub">заплановано</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Прийшло</div>
+            <div class="stat-value" id="stat-came">0</div>
+            <div class="stat-sub" id="stat-showup">— %</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Виручка</div>
+            <div class="stat-value green" id="stat-revenue">0 zł</div>
+            <div class="stat-sub" id="stat-avg">ср. чек — zł</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Неявки</div>
+            <div class="stat-value" id="stat-noshow">0</div>
+            <div class="stat-sub">не прийшли</div>
+          </div>
+        </div>
+
+        <!-- ADDITIONAL STATS -->
+        <div class="card" id="extra-stats">
+          <div class="card-pad">
+            <div class="card-title">Детально</div>
+            <div id="extra-stats-content">
+              <div class="type-row">
+                <div class="type-left"><div class="type-dot" style="background:#3B82F6"></div><div class="type-name">Нових клієнтів</div></div>
+                <div class="type-right"><div class="type-count" id="stat-new">—</div></div>
+              </div>
+              <div class="type-row">
+                <div class="type-left"><div class="type-dot" style="background:#F59E0B"></div><div class="type-name">Повторних</div></div>
+                <div class="type-right"><div class="type-count" id="stat-repeat">—</div></div>
+              </div>
+              <div class="type-row">
+                <div class="type-left"><div class="type-dot" style="background:#10B981"></div><div class="type-name">Постійних</div></div>
+                <div class="type-right"><div class="type-count" id="stat-loyal">—</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ENTRIES LIST -->
+        <div class="card">
+          <div style="padding:14px 16px 8px; border-bottom:0.5px solid var(--border)">
+            <div class="card-title" style="margin:0">Записи</div>
+          </div>
+          <div id="entries-list">
+            <div class="empty-state">
+              <span class="emoji">✂️</span>
+              Немає записів.<br>Натисни + щоб додати
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FAB -->
+      <button class="fab" onclick="openAddForm()">
+        <span class="fab-icon">+</span>
+      </button>
+    </div>
+
+    <!-- ══════════════════════════════════ ADD/EDIT ══════════════════════════════════ -->
+    <div class="screen" id="screen-add">
+      <div class="screen-header" style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <h1 id="form-title">Новий запис</h1>
+          <p id="form-subtitle">Заповни дані за день</p>
+        </div>
+        <button onclick="goHome()" style="background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.7);padding:8px 14px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✕ Закрити</button>
+      </div>
+
+      <div class="form-section">
+        <!-- MODE TOGGLE: По клієнту LEFT, Підсумок дня RIGHT -->
+        <div class="mode-toggle">
+          <button class="mode-btn active" onclick="setMode('client',this)" id="mode-client-btn">👤 По клієнту</button>
+          <button class="mode-btn" onclick="setMode('day',this)" id="mode-day-btn">📋 Підсумок дня</button>
+        </div>
+
+        <!-- CLIENT MODE: YES/NO fields -->
+        <div class="card client-fields" id="client-yn-card">
+          <div class="card-pad" style="padding-bottom:8px">
+            <div class="card-title">ОСНОВНЕ</div>
+            <div class="field">
+              <label>Дата</label>
+              <input type="date" id="field-date-client">
+            </div>
+            <div style="height:10px"></div>
+            <div class="field">
+              <label>Виручка (zł)</label>
+              <input type="number" id="field-revenue-client" placeholder="0" min="0" inputmode="decimal">
+            </div>
+          </div>
+          <div style="height:1px;background:var(--border)"></div>
+          <div class="yn-section">
+            <div class="yn-question">Клієнт був записаний?</div>
+            <div class="yn-hint">Мав попередній запис у Booksy або особисто</div>
+            <div class="yn-row">
+              <div class="yn-btn yes" id="yn-booked-yes" onclick="selectYN('booked','yes')">
+                <span class="yn-emoji">✅</span>
+                <span class="yn-text">Так, записаний</span>
+              </div>
+              <div class="yn-btn no" id="yn-booked-no" onclick="selectYN('booked','no')">
+                <span class="yn-emoji">🚶</span>
+                <span class="yn-text">Ні, без запису</span>
+              </div>
+            </div>
+            <div class="yn-divider"></div>
+            <div class="yn-question">Клієнт прийшов?</div>
+            <div class="yn-hint">Чи фактично відвідав барбершоп сьогодні</div>
+            <div class="yn-row">
+              <div class="yn-btn yes" id="yn-came-yes" onclick="selectYN('came','yes')">
+                <span class="yn-emoji">✅</span>
+                <span class="yn-text">Так, прийшов</span>
+              </div>
+              <div class="yn-btn no" id="yn-came-no" onclick="selectYN('came','no')">
+                <span class="yn-emoji">❌</span>
+                <span class="yn-text">Ні, не прийшов</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DAY SUMMARY MODE: number fields -->
+        <div class="card day-fields" id="day-base-card" style="display:none">
+          <div class="card-pad" style="padding-bottom:8px">
+            <div class="card-title">Основне</div>
+            <div class="field">
+              <label>Дата</label>
+              <input type="date" id="field-date">
+            </div>
+          </div>
+          <div class="card-pad" style="padding-top:10px">
+            <div class="grid2">
+              <div class="field">
+                <label>Записів</label>
+                <input type="number" id="field-bookings" placeholder="0" min="0" inputmode="numeric">
+              </div>
+              <div class="field">
+                <label>Прийшло</label>
+                <input type="number" id="field-came" placeholder="0" min="0" inputmode="numeric">
+              </div>
+            </div>
+          </div>
+          <div class="card-pad" style="padding-top:10px">
+            <div class="field">
+              <label>Виручка (zł)</label>
+              <input type="number" id="field-revenue" placeholder="0" min="0" inputmode="decimal">
+            </div>
+          </div>
+        </div>
+
+        <!-- SERVICES (optional) -->
+        <div class="card" id="section-services">
+          <div class="collapse-header" onclick="toggleSection('services')">
+            <div class="collapse-left">
+              <span class="collapse-title">Послуги</span>
+              <span class="optional-tag">необов'язково</span>
+            </div>
+            <span class="collapse-chevron" id="chevron-services">▼</span>
+          </div>
+          <div class="collapse-body" id="body-services">
+            <div class="counter-list" id="services-list"></div>
+            <div class="custom-add">
+              <div class="custom-add-label">СВОЯ ПОСЛУГА</div>
+              <div class="custom-add-row">
+                <input type="text" id="custom-service-name" placeholder="Назва послуги..." class="custom-name-input">
+                <input type="number" id="custom-service-price" placeholder="zł" class="price-input" inputmode="numeric">
+                <button class="custom-add-btn" onclick="addCustomService()">+ Додати</button>
+              </div>
+            </div>
+            <div class="subtotal">
+              <span class="subtotal-label">Сума по послугах</span>
+              <span class="subtotal-val" id="services-total">0 zł</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SOURCES (optional) -->
+        <div class="card" id="section-sources">
+          <div class="collapse-header" onclick="toggleSection('sources')">
+            <div class="collapse-left">
+              <span class="collapse-title">Джерела клієнтів</span>
+              <span class="optional-tag">необов'язково</span>
+            </div>
+            <span class="collapse-chevron" id="chevron-sources">▼</span>
+          </div>
+          <div class="collapse-body" id="body-sources">
+            <div class="counter-list" id="sources-list"></div>
+          </div>
+        </div>
+
+        <!-- CLIENT TYPES (optional) -->
+        <div class="card" id="section-types">
+          <div class="collapse-header" onclick="toggleSection('types')">
+            <div class="collapse-left">
+              <span class="collapse-title">Тип клієнтів</span>
+              <span class="optional-tag">необов'язково</span>
+            </div>
+            <span class="collapse-chevron" id="chevron-types">▼</span>
+          </div>
+          <div class="collapse-body" id="body-types">
+            <div class="counter-list" id="types-list"></div>
+          </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <button class="btn-primary" onclick="saveEntry()" id="save-btn">Зберегти запис</button>
+        <button class="btn-ghost" onclick="goHome()">Скасувати</button>
+        <button class="btn-danger" onclick="deleteEntry()" id="delete-btn" style="display:none">Видалити запис</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════ STATS ══════════════════════════════════ -->
+    <div class="screen" id="screen-stats">
+      <div class="screen-header">
+        <h1>Статистика 📊</h1>
+        <p>Аналітика вашої роботи</p>
+        <div style="height:12px"></div>
+        <div class="period-toggle">
+          <button class="period-btn active" onclick="setStatsPeriod('week',this)">Тиждень</button>
+          <button class="period-btn" onclick="setStatsPeriod('month',this)">Місяць</button>
+          <button class="period-btn" onclick="setStatsPeriod('year',this)">Рік</button>
+        </div>
+      </div>
+
+      <div class="content">
+        <!-- TOP STATS -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Виручка</div>
+            <div class="stat-value green" id="s-revenue">0 zł</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Клієнтів</div>
+            <div class="stat-value accent" id="s-clients">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Середній чек</div>
+            <div class="stat-value" id="s-avg">0 zł</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Show-up</div>
+            <div class="stat-value" id="s-showup">— %</div>
+          </div>
+        </div>
+
+        <!-- SOURCES -->
+        <div class="card">
+          <div class="card-pad">
+            <div class="card-title">Джерела клієнтів</div>
+            <div id="sources-chart"></div>
+          </div>
+        </div>
+
+        <!-- CLIENT TYPES -->
+        <div class="card">
+          <div class="card-pad">
+            <div class="card-title">Нові vs Постійні</div>
+            <div id="types-chart"></div>
+          </div>
+        </div>
+
+        <!-- TOP SERVICES -->
+        <div class="card">
+          <div class="card-pad">
+            <div class="card-title">Популярні послуги</div>
+            <div id="services-chart"></div>
+          </div>
+        </div>
+
+        <!-- SYNC CONFIG -->
+        <div class="card">
+          <div class="card-pad">
+            <div class="card-title">Синхронізація з Google Sheets</div>
+            <div class="field">
+              <label>URL Apps Script</label>
+              <input type="url" id="script-url" placeholder="https://script.google.com/..." style="font-size:12px">
+            </div>
+            <div style="height:10px"></div>
+            <button class="btn-primary" onclick="saveScriptUrl()" style="font-size:14px;padding:12px">Зберегти URL</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /screens -->
+
+  <!-- TAB BAR -->
+  <div class="tab-bar">
+    <button class="tab-item active" onclick="switchTab('home')" id="tab-home">
+      <span class="tab-icon">🏠</span>
+      <span class="tab-label">Головна</span>
+    </button>
+    <button class="tab-item" onclick="switchTab('add')" id="tab-add">
+      <span class="tab-icon">➕</span>
+      <span class="tab-label">Додати</span>
+    </button>
+    <button class="tab-item" onclick="switchTab('stats')" id="tab-stats">
+      <span class="tab-icon">📊</span>
+      <span class="tab-label">Статистика</span>
+    </button>
+  </div>
+
+</div><!-- /app -->
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+// CONFIG & DATA
+// ══════════════════════════════════════════════
+
+const SERVICES_DEFAULT = [
+  { id: 's1', name: 'Стрижка', price: 120 },
+  { id: 's2', name: 'Стрижка + Борода', price: 160 },
+  { id: 's3', name: 'Борода', price: 80 },
+  { id: 's4', name: 'Фарбування', price: 200 },
+  { id: 's5', name: 'Гарячий рушник + окантовка шиї', price: 30 },
+];
+
+const SOURCES_DEFAULT = [
+  { id: 'src1', name: 'Booksy', color: '#10B981' },
+  { id: 'src2', name: 'Реклама Instagram', color: '#8B5CF6' },
+  { id: 'src3', name: 'Реклама Facebook', color: '#3B82F6' },
+  { id: 'src4', name: 'Пост Instagram', color: '#EC4899' },
+  { id: 'src5', name: 'Знайомий', color: '#F59E0B' },
+  { id: 'src6', name: 'Інше', color: '#94A3B8' },
+];
+
+const TYPES_DEFAULT = [
+  { id: 't1', name: 'Новий', sub: 'перший візит', color: '#3B82F6' },
+  { id: 't2', name: 'Повторний', sub: '2–5 візитів', color: '#F59E0B' },
+  { id: 't3', name: 'Постійний', sub: '6+ візитів', color: '#10B981' },
+];
+
+// State
+let entries = JSON.parse(localStorage.getItem('dl_entries') || '[]');
+let services = JSON.parse(localStorage.getItem('dl_services') || JSON.stringify(SERVICES_DEFAULT));
+let currentPeriod = 'day';
+let currentStatsPeriod = 'week';
+let editingId = null;
+let currentMode = 'day';
+
+// Form counters
+let serviceCounters = {};
+let sourceCounters = {};
+let typeCounters = {};
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Status date
+  const d = new Date();
+  const days = ['нд','пн','вт','ср','чт','пт','сб'];
+  const months = ['січ','лют','бер','кві','тра','чер','лип','сер','вер','жов','лис','гру'];
+  document.getElementById('statusDate').textContent =
+    `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]}`;
+
+  // Load script URL
+  const url = localStorage.getItem('dl_script_url');
+  if (url) document.getElementById('script-url').value = url;
+
+  // Init period slider
+  setTimeout(() => initSlider('home-period-toggle', 'home-period-slider'), 50);
+
+  renderHome();
+  renderForm();
+});
+
+// ══════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════
+
+function switchTab(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'stats') renderStats();
+  if (name === 'home') renderHome();
+}
+
+function goHome() { switchTab('home'); }
+
+function openAddForm(id = null) {
+  editingId = id;
+  resetForm();
+  if (id) {
+    const entry = entries.find(e => e.id === id);
+    if (entry) loadEntryToForm(entry);
+    document.getElementById('form-title').textContent = 'Редагувати';
+    document.getElementById('form-subtitle').textContent = 'Зміни зберігаються';
+    document.getElementById('delete-btn').style.display = '';
+    document.getElementById('save-btn').textContent = 'Зберегти зміни';
+  } else {
+    document.getElementById('form-title').textContent = 'Новий запис';
+    document.getElementById('form-subtitle').textContent = 'Заповни дані за день';
+    document.getElementById('delete-btn').style.display = 'none';
+    document.getElementById('save-btn').textContent = 'Зберегти запис';
+  }
+  switchTab('add');
+}
+
+// ══════════════════════════════════════════════
+// FORM
+// ══════════════════════════════════════════════
+
+function renderForm() {
+  // Set today's date
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('field-date').value = today;
+
+  renderCounters('services-list', services, serviceCounters, true);
+  renderCounters('sources-list', SOURCES_DEFAULT, sourceCounters, false);
+  renderCounters('types-list', TYPES_DEFAULT, typeCounters, false, true);
+}
+
+function resetForm() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('field-date').value = today;
+  document.getElementById('field-date-client').value = today;
+  document.getElementById('field-bookings').value = '';
+  document.getElementById('field-came').value = '';
+  document.getElementById('field-revenue').value = '';
+  document.getElementById('field-revenue-client').value = '';
+
+  // Reset YN state
+  ynState = { booked: null, came: null };
+  ['yn-booked-yes','yn-booked-no','yn-came-yes','yn-came-no'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('sel');
+  });
+
+  // Default to client mode
+  currentMode = 'client';
+  document.getElementById('client-yn-card').style.display = 'block';
+  document.getElementById('day-base-card').style.display = 'none';
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('mode-client-btn').classList.add('active');
+
+  // Reset counters
+  services.forEach(s => serviceCounters[s.id] = 0);
+  SOURCES_DEFAULT.forEach(s => sourceCounters[s.id] = 0);
+  TYPES_DEFAULT.forEach(t => typeCounters[t.id] = 0);
+
+  renderCounters('services-list', services, serviceCounters, true);
+  renderCounters('sources-list', SOURCES_DEFAULT, sourceCounters, false);
+  renderCounters('types-list', TYPES_DEFAULT, typeCounters, false, true);
+  updateServicesTotal();
+
+  // Close sections
+  ['services','sources','types'].forEach(s => {
+    document.getElementById('body-' + s).classList.remove('open');
+    document.getElementById('chevron-' + s).classList.remove('open');
+  });
+}
+
+function loadEntryToForm(entry) {
+  document.getElementById('field-date').value = entry.date;
+  document.getElementById('field-bookings').value = entry.bookings || '';
+  document.getElementById('field-came').value = entry.came || '';
+  document.getElementById('field-revenue').value = entry.revenue || '';
+
+  if (entry.services) {
+    Object.assign(serviceCounters, entry.services);
+    renderCounters('services-list', services, serviceCounters, true);
+    updateServicesTotal();
+    if (Object.values(entry.services).some(v => v > 0)) openSection('services');
+  }
+  if (entry.sources) {
+    Object.assign(sourceCounters, entry.sources);
+    renderCounters('sources-list', SOURCES_DEFAULT, sourceCounters, false);
+    if (Object.values(entry.sources).some(v => v > 0)) openSection('sources');
+  }
+  if (entry.types) {
+    Object.assign(typeCounters, entry.types);
+    renderCounters('types-list', TYPES_DEFAULT, typeCounters, false, true);
+    if (Object.values(entry.types).some(v => v > 0)) openSection('types');
+  }
+}
+
+function renderCounters(containerId, items, counters, withSubtotal, withSub = false) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  // Init counters
+  items.forEach(item => {
+    if (counters[item.id] === undefined) counters[item.id] = 0;
+  });
+  el.innerHTML = items.map(item => `
+    <div class="counter-row" id="cr-${containerId}-${item.id}">
+      <div class="counter-info">
+        <div class="counter-name">${item.name}</div>
+        ${item.price ? `<div class="counter-price">${item.price} zł</div>` : ''}
+        ${withSub && item.sub ? `<div class="counter-price">${item.sub}</div>` : ''}
+      </div>
+      <div class="counter-ctrl">
+        <button class="c-btn" onclick="changeCounter('${containerId}','${item.id}',-1)">−</button>
+        <span class="c-val ${counters[item.id] > 0 ? 'on' : ''}" id="cv-${containerId}-${item.id}">${counters[item.id]}</span>
+        <button class="c-btn plus" onclick="changeCounter('${containerId}','${item.id}',1)">+</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function changeCounter(containerId, id, delta) {
+  const map = containerId === 'services-list' ? serviceCounters :
+              containerId === 'sources-list' ? sourceCounters : typeCounters;
+  map[id] = Math.max(0, (map[id] || 0) + delta);
+  const valEl = document.getElementById(`cv-${containerId}-${id}`);
+  if (valEl) {
+    valEl.textContent = map[id];
+    valEl.className = 'c-val' + (map[id] > 0 ? ' on' : '');
+  }
+  if (containerId === 'services-list') updateServicesTotal();
+}
+
+function updateServicesTotal() {
+  let total = 0;
+  services.forEach(s => { total += (serviceCounters[s.id] || 0) * s.price; });
+  const el = document.getElementById('services-total');
+  if (el) el.textContent = total + ' zł';
+}
+
+function toggleSection(name) {
+  const body = document.getElementById('body-' + name);
+  const chevron = document.getElementById('chevron-' + name);
+  body.classList.toggle('open');
+  chevron.classList.toggle('open');
+}
+
+function openSection(name) {
+  document.getElementById('body-' + name).classList.add('open');
+  document.getElementById('chevron-' + name).classList.add('open');
+}
+
+function setMode(mode, btn) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const clientCard = document.getElementById('client-yn-card');
+  const dayCard = document.getElementById('day-base-card');
+  if (mode === 'client') {
+    clientCard.style.display = 'block';
+    dayCard.style.display = 'none';
+  } else {
+    clientCard.style.display = 'none';
+    dayCard.style.display = 'block';
+  }
+}
+
+// YN state
+let ynState = { booked: null, came: null };
+
+function selectYN(field, val) {
+  ynState[field] = val;
+  const yesBtn = document.getElementById(`yn-${field}-yes`);
+  const noBtn  = document.getElementById(`yn-${field}-no`);
+  yesBtn.classList.toggle('sel', val === 'yes');
+  noBtn.classList.toggle('sel', val === 'no');
+  // Haptic-like micro animation
+  const chosen = val === 'yes' ? yesBtn : noBtn;
+  chosen.style.transform = 'scale(.92)';
+  setTimeout(() => chosen.style.transform = '', 150);
+}
+
+function initSlider(toggleId, sliderId) {
+  const toggle = document.getElementById(toggleId);
+  const slider = document.getElementById(sliderId);
+  if (!toggle || !slider) return;
+  const btns = toggle.querySelectorAll('.period-btn');
+  const activeIdx = [...btns].findIndex(b => b.classList.contains('active'));
+  updateSlider(slider, toggle, activeIdx);
+}
+
+function updateSlider(slider, toggle, idx) {
+  const btns = toggle.querySelectorAll('.period-btn');
+  if (!btns[idx]) return;
+  const toggleRect = toggle.getBoundingClientRect();
+  const btnRect = btns[idx].getBoundingClientRect();
+  slider.style.left = (btnRect.left - toggleRect.left) + 'px';
+  slider.style.width = btnRect.width + 'px';
+}
+
+function addCustomService() {
+  const nameInput = document.getElementById('custom-service-name');
+  const priceInput = document.getElementById('custom-service-price');
+  const name = nameInput.value.trim();
+  const price = parseInt(priceInput.value) || 0;
+  if (!name) { showToast('Введи назву послуги', true); return; }
+  const id = 'custom_' + Date.now();
+  const newService = { id, name, price };
+  services.push(newService);
+  serviceCounters[id] = 1;
+  localStorage.setItem('dl_services', JSON.stringify(services));
+  renderCounters('services-list', services, serviceCounters, true);
+  updateServicesTotal();
+  nameInput.value = '';
+  priceInput.value = '';
+  showToast('✓ Послугу додано');
+}
+
+// ══════════════════════════════════════════════
+// SAVE / DELETE
+// ══════════════════════════════════════════════
+
+function saveEntry() {
+  let date, bookings, came, revenue;
+
+  if (currentMode === 'client') {
+    date = document.getElementById('field-date-client').value;
+    revenue = parseFloat(document.getElementById('field-revenue-client').value) || 0;
+    bookings = ynState.booked === 'yes' ? 1 : (ynState.booked === 'no' ? 0 : 0);
+    came = ynState.came === 'yes' ? 1 : 0;
+    if (!date) { showToast('Вибери дату', true); return; }
+    if (ynState.booked === null && ynState.came === null && revenue === 0) {
+      showToast('Заповни хоча б одне поле', true); return;
+    }
+  } else {
+    date = document.getElementById('field-date').value;
+    bookings = parseInt(document.getElementById('field-bookings').value) || 0;
+    came = parseInt(document.getElementById('field-came').value) || 0;
+    revenue = parseFloat(document.getElementById('field-revenue').value) || 0;
+    if (!date) { showToast('Вибери дату', true); return; }
+    if (bookings === 0 && came === 0 && revenue === 0) {
+      showToast('Заповни хоча б одне поле', true); return;
+    }
+  }
+
+  const entry = {
+    id: editingId || ('e' + Date.now()),
+    date, bookings, came, revenue,
+    services: { ...serviceCounters },
+    sources: { ...sourceCounters },
+    types: { ...typeCounters },
+    mode: currentMode,
+    createdAt: new Date().toISOString(),
+  };
+
+  if (editingId) {
+    const idx = entries.findIndex(e => e.id === editingId);
+    if (idx !== -1) entries[idx] = entry;
+  } else {
+    entries.push(entry);
+  }
+
+  localStorage.setItem('dl_entries', JSON.stringify(entries));
+  syncToSheets(entry);
+  showToast('✓ Збережено!');
+  goHome();
+}
+
+function deleteEntry() {
+  if (!editingId) return;
+  if (!confirm('Видалити цей запис?')) return;
+  entries = entries.filter(e => e.id !== editingId);
+  localStorage.setItem('dl_entries', JSON.stringify(entries));
+  showToast('Запис видалено');
+  editingId = null;
+  goHome();
+}
+
+// ══════════════════════════════════════════════
+// RENDER HOME
+// ══════════════════════════════════════════════
+
+function setPeriod(period, btn, idx) {
+  currentPeriod = period;
+  const toggle = document.getElementById('home-period-toggle');
+  const slider = document.getElementById('home-period-slider');
+  document.querySelectorAll('#screen-home .period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateSlider(slider, toggle, idx);
+  renderHome();
+}
+
+function getFilteredEntries(period) {
+  const now = new Date();
+  return entries.filter(e => {
+    const d = new Date(e.date);
+    if (period === 'day') return e.date === now.toISOString().split('T')[0];
+    if (period === 'week') {
+      const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7);
+      return d >= weekAgo;
+    }
+    if (period === 'month') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    return true;
+  });
+}
+
+function renderHome() {
+  const filtered = getFilteredEntries(currentPeriod);
+  const bookings = filtered.reduce((s, e) => s + (e.bookings || 0), 0);
+  const came = filtered.reduce((s, e) => s + (e.came || 0), 0);
+  const revenue = filtered.reduce((s, e) => s + (e.revenue || 0), 0);
+  const noshow = Math.max(0, bookings - came);
+  const showup = came && bookings ? Math.round(came / bookings * 100) : 0;
+  const avg = came > 0 ? Math.round(revenue / came) : 0;
+
+  document.getElementById('stat-bookings').textContent = bookings;
+  document.getElementById('stat-came').textContent = came;
+  document.getElementById('stat-revenue').textContent = revenue.toLocaleString('uk') + ' zł';
+  document.getElementById('stat-noshow').textContent = noshow;
+  document.getElementById('stat-showup').textContent = bookings ? showup + '%' : '— %';
+  document.getElementById('stat-avg').textContent = `ср. чек ${avg} zł`;
+
+  // Type counts
+  const newC = sumTypeAcross(filtered, 't1');
+  const repC = sumTypeAcross(filtered, 't2');
+  const loyC = sumTypeAcross(filtered, 't3');
+  document.getElementById('stat-new').textContent = newC || '—';
+  document.getElementById('stat-repeat').textContent = repC || '—';
+  document.getElementById('stat-loyal').textContent = loyC || '—';
+
+  // Entries list
+  const list = document.getElementById('entries-list');
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="empty-state"><span class="emoji">✂️</span>Немає записів.<br>Натисни + щоб додати</div>`;
+    return;
+  }
+  const sorted = [...filtered].sort((a, b) => new Date(b.date) - new Date(a.date));
+  list.innerHTML = sorted.map(e => {
+    const d = new Date(e.date + 'T12:00:00');
+    const dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}`;
+    const topSource = getTopSource(e);
+    return `
+      <div class="entry-item" onclick="openAddForm('${e.id}')">
+        <div class="entry-dot"></div>
+        <div class="entry-main">
+          <div class="entry-title">${dateStr} — ${e.came || 0} з ${e.bookings || 0} клієнтів</div>
+          <div class="entry-sub">${topSource}${e.came ? ' · Show-up ' + (e.bookings ? Math.round(e.came/e.bookings*100) : 0) + '%' : ''}</div>
+        </div>
+        <div class="entry-amount">${(e.revenue || 0).toLocaleString('uk')} zł</div>
+        <div class="entry-arrow">›</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function getTopSource(entry) {
+  if (!entry.sources) return '';
+  let top = null, max = 0;
+  SOURCES_DEFAULT.forEach(s => {
+    const v = entry.sources[s.id] || 0;
+    if (v > max) { max = v; top = s.name; }
+  });
+  return top && max > 0 ? top : '';
+}
+
+function sumTypeAcross(entries, typeId) {
+  return entries.reduce((s, e) => s + ((e.types && e.types[typeId]) || 0), 0);
+}
+
+// ══════════════════════════════════════════════
+// STATS
+// ══════════════════════════════════════════════
+
+function setStatsPeriod(period, btn) {
+  currentStatsPeriod = period;
+  document.querySelectorAll('#screen-stats .period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderStats();
+}
+
+function renderStats() {
+  const now = new Date();
+  const filtered = entries.filter(e => {
+    const d = new Date(e.date);
+    if (currentStatsPeriod === 'week') {
+      const ago = new Date(now); ago.setDate(now.getDate() - 7);
+      return d >= ago;
+    }
+    if (currentStatsPeriod === 'month') {
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }
+    return d.getFullYear() === now.getFullYear();
+  });
+
+  const revenue = filtered.reduce((s, e) => s + (e.revenue || 0), 0);
+  const came = filtered.reduce((s, e) => s + (e.came || 0), 0);
+  const bookings = filtered.reduce((s, e) => s + (e.bookings || 0), 0);
+  const avg = came > 0 ? Math.round(revenue / came) : 0;
+  const showup = bookings > 0 ? Math.round(came / bookings * 100) : 0;
+
+  document.getElementById('s-revenue').textContent = revenue.toLocaleString('uk') + ' zł';
+  document.getElementById('s-clients').textContent = came;
+  document.getElementById('s-avg').textContent = avg + ' zł';
+  document.getElementById('s-showup').textContent = bookings ? showup + '%' : '—';
+
+  // Sources chart
+  const srcTotals = {};
+  SOURCES_DEFAULT.forEach(s => srcTotals[s.id] = 0);
+  filtered.forEach(e => {
+    if (e.sources) SOURCES_DEFAULT.forEach(s => { srcTotals[s.id] += e.sources[s.id] || 0; });
+  });
+  const totalSrc = Object.values(srcTotals).reduce((a, b) => a + b, 0);
+  const srcEl = document.getElementById('sources-chart');
+  if (totalSrc === 0) {
+    srcEl.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px 0">Немає даних</div>';
+  } else {
+    srcEl.innerHTML = SOURCES_DEFAULT.map(s => {
+      const pct = Math.round(srcTotals[s.id] / totalSrc * 100);
+      return `<div class="source-bar-item">
+        <div class="source-bar-top">
+          <span class="source-bar-name">${s.name}</span>
+          <span class="source-bar-val">${srcTotals[s.id]} (${pct}%)</span>
+        </div>
+        <div class="source-track">
+          <div class="source-fill" style="width:${pct}%;background:${s.color}"></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Types chart
+  const typeTotals = {};
+  TYPES_DEFAULT.forEach(t => typeTotals[t.id] = 0);
+  filtered.forEach(e => {
+    if (e.types) TYPES_DEFAULT.forEach(t => { typeTotals[t.id] += e.types[t.id] || 0; });
+  });
+  const totalTypes = Object.values(typeTotals).reduce((a, b) => a + b, 0);
+  const typesEl = document.getElementById('types-chart');
+  if (totalTypes === 0) {
+    typesEl.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px 0">Немає даних</div>';
+  } else {
+    typesEl.innerHTML = TYPES_DEFAULT.map(t => {
+      const pct = totalTypes > 0 ? Math.round(typeTotals[t.id] / totalTypes * 100) : 0;
+      return `<div class="type-row">
+        <div class="type-left">
+          <div class="type-dot" style="background:${t.color}"></div>
+          <div><div class="type-name">${t.name}</div><div class="type-sub">${t.sub}</div></div>
+        </div>
+        <div class="type-right">
+          <div class="type-count">${typeTotals[t.id]}</div>
+          <div class="type-pct">${pct}%</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Services chart
+  const svcTotals = {};
+  services.forEach(s => svcTotals[s.id] = 0);
+  filtered.forEach(e => {
+    if (e.services) services.forEach(s => { svcTotals[s.id] += e.services[s.id] || 0; });
+  });
+  const totalSvc = Object.values(svcTotals).reduce((a, b) => a + b, 0);
+  const svcEl = document.getElementById('services-chart');
+  if (totalSvc === 0) {
+    svcEl.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px 0">Немає даних</div>';
+  } else {
+    const sorted = services.filter(s => svcTotals[s.id] > 0)
+      .sort((a, b) => svcTotals[b.id] - svcTotals[a.id]);
+    svcEl.innerHTML = sorted.map((s, i) => {
+      const pct = Math.round(svcTotals[s.id] / totalSvc * 100);
+      const colors = ['#0D9488','#2563EB','#7C3AED','#DB2777','#D97706'];
+      return `<div class="source-bar-item">
+        <div class="source-bar-top">
+          <span class="source-bar-name">${s.name}</span>
+          <span class="source-bar-val">${svcTotals[s.id]} шт · ${pct}%</span>
+        </div>
+        <div class="source-track">
+          <div class="source-fill" style="width:${pct}%;background:${colors[i % colors.length]}"></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ══════════════════════════════════════════════
+// GOOGLE SHEETS SYNC
+// ══════════════════════════════════════════════
+
+function saveScriptUrl() {
+  const url = document.getElementById('script-url').value.trim();
+  if (!url) { showToast('Введи URL', true); return; }
+  localStorage.setItem('dl_script_url', url);
+  showToast('✓ URL збережено!');
+}
+
+async function syncToSheets(entry) {
+  const url = localStorage.getItem('dl_script_url');
+  if (!url) return;
+
+  const srcSummary = SOURCES_DEFAULT
+    .filter(s => entry.sources && entry.sources[s.id] > 0)
+    .map(s => `${s.name}: ${entry.sources[s.id]}`).join(', ');
+
+  const svcSummary = services
+    .filter(s => entry.services && entry.services[s.id] > 0)
+    .map(s => `${s.name}: ${entry.services[s.id]}`).join(', ');
+
+  const typeSummary = TYPES_DEFAULT
+    .filter(t => entry.types && entry.types[t.id] > 0)
+    .map(t => `${t.name}: ${entry.types[t.id]}`).join(', ');
+
+  const payload = {
+    date: entry.date,
+    bookings: entry.bookings,
+    came: entry.came,
+    revenue: entry.revenue,
+    noshow: Math.max(0, entry.bookings - entry.came),
+    showup: entry.bookings > 0 ? Math.round(entry.came / entry.bookings * 100) : 0,
+    sources: srcSummary,
+    services: svcSummary,
+    types: typeSummary,
+    new_clients: (entry.types && entry.types['t1']) || 0,
+    repeat_clients: (entry.types && entry.types['t2']) || 0,
+    loyal_clients: (entry.types && entry.types['t3']) || 0,
+  };
+
+  try {
+    await fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch (e) {
+    console.log('Sync error:', e);
+  }
+}
+
+// ══════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════
+
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 2500);
+}
+</script>
+</body>
+</html>
