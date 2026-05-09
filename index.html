@@ -35,6 +35,13 @@
     height: 100%; overflow: hidden; background: var(--navy);
     font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
     color: var(--text); overscroll-behavior: none;
+    -webkit-overflow-scrolling: auto;
+  }
+  /* Fix #7: prevent white line on overscroll/pull-to-refresh */
+  .screen { background: var(--bg); }
+  .screen::before {
+    content: ''; position: absolute; top: -100px; left: 0; right: 0;
+    height: 100px; background: var(--navy); z-index: -1;
   }
 
   /* ── APP SHELL ── */
@@ -52,7 +59,8 @@
     display: flex; justify-content: space-between; align-items: flex-end;
     flex-shrink: 0;
   }
-  .status-brand { color: var(--accent); font-size: 13px; font-weight: 600; letter-spacing: .04em; }
+  .status-brand { display: flex; align-items: center; }
+  .brand-logo { height: 26px; width: auto; display: block; }
   .status-date { color: rgba(255,255,255,.45); font-size: 12px; }
 
   /* ── SCREENS ── */
@@ -115,13 +123,17 @@
     transition: left .2s ease, width .2s ease;
     z-index: 0; pointer-events: none;
   }
-  /* Stats screen — light toggle */
-  .period-toggle.light { background: #EFF3F8; margin: 0 0 0; }
-  .period-toggle.light .period-btn { color: var(--text2); }
-  .period-toggle.light .period-btn.active { color: var(--text); }
+  /* Stats screen — premium toggle (Q5-b: navy slider on light) */
+  .period-toggle.light {
+    background: rgba(255,255,255,.08);
+    margin: 0;
+    border: 0.5px solid rgba(255,255,255,.1);
+  }
+  .period-toggle.light .period-btn { color: rgba(255,255,255,.55); }
+  .period-toggle.light .period-btn.active { color: #fff; font-weight: 700; }
   .period-toggle.light .period-slider {
-    background: var(--card);
-    box-shadow: 0 1px 5px rgba(0,0,0,.12);
+    background: linear-gradient(135deg, var(--accent2) 0%, var(--accent) 100%);
+    box-shadow: 0 2px 10px rgba(20,184,166,.4);
   }
   @keyframes periodPop {
     0%   { transform: scale(1); }
@@ -460,6 +472,140 @@
     content: ''; width: 8px; height: 8px; border-radius: 4px;
     background: #fff;
   }
+  /* ── HEADER ICON BUTTONS ── */
+  .header-actions {
+    position: absolute; top: 14px; right: 16px;
+    display: flex; gap: 8px;
+  }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 18px;
+    background: rgba(255,255,255,.1); border: none;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 16px; cursor: pointer;
+    transition: background .15s, transform .12s;
+  }
+  .icon-btn:active { transform: scale(.9); background: rgba(255,255,255,.2); }
+
+  /* ── DYNAMIC REVENUE +BUTTON (Q1) ── */
+  .revenue-suggest {
+    margin-top: 8px; display: flex; gap: 8px; align-items: center;
+    animation: slideIn .25s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .revenue-suggest-btn {
+    flex: 1; padding: 10px 14px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent2) 0%, var(--accent) 100%);
+    color: #fff; border: none; font-size: 13px; font-weight: 700;
+    cursor: pointer; font-family: inherit;
+    box-shadow: 0 2px 8px rgba(20,184,166,.3);
+    transition: transform .12s, box-shadow .15s;
+  }
+  .revenue-suggest-btn:active { transform: scale(.97); box-shadow: 0 1px 4px rgba(20,184,166,.2); }
+  .revenue-suggest-btn .plus { font-size: 15px; margin-right: 4px; opacity: .9; }
+  .revenue-suggest-dismiss {
+    width: 36px; height: 36px; border-radius: 10px;
+    border: 1.5px solid var(--border); background: var(--card);
+    color: var(--text2); font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .revenue-suggest-dismiss:active { background: #F1F5F9; }
+
+  /* ── QUICK CHIPS (client mode source/type) ── */
+  .quick-chips {
+    display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 14px 10px;
+  }
+  .quick-chip {
+    padding: 8px 12px; border-radius: 20px;
+    background: var(--bg); border: 1.5px solid var(--border);
+    font-size: 12px; font-weight: 500; color: var(--text2);
+    cursor: pointer; transition: all .15s ease;
+    -webkit-user-select: none;
+  }
+  .quick-chip:active { transform: scale(.94); }
+  .quick-chip.sel {
+    background: var(--accent2); border-color: var(--accent2);
+    color: #fff; font-weight: 700;
+    box-shadow: 0 2px 6px rgba(20,184,166,.3);
+  }
+
+  /* ── SETTINGS SCREEN ── */
+  .settings-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; border-bottom: 0.5px solid var(--border);
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .svc-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .svc-name { font-size: 14px; font-weight: 500; color: var(--text); }
+  .svc-price-tag { font-size: 12px; color: var(--text2); }
+  .svc-actions { display: flex; gap: 6px; }
+  .svc-action-btn {
+    width: 32px; height: 32px; border-radius: 16px;
+    border: 1.5px solid var(--border); background: var(--card);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 14px; color: var(--text2);
+  }
+  .svc-action-btn.delete { color: var(--red); border-color: #FCA5A5; }
+  .svc-base-tag {
+    font-size: 9px; padding: 2px 6px; border-radius: 10px;
+    background: #DBEAFE; color: #1E40AF; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .04em;
+    display: inline-block; margin-top: 2px; width: fit-content;
+  }
+
+  /* ── EDIT SERVICE MODAL ── */
+  .edit-modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,.5);
+    z-index: 100; display: none; align-items: center; justify-content: center;
+    padding: 20px; opacity: 0; transition: opacity .2s;
+  }
+  .edit-modal.show { display: flex; opacity: 1; }
+  .edit-modal-content {
+    background: var(--card); border-radius: 16px; padding: 20px;
+    width: 100%; max-width: 360px;
+    transform: scale(.95); transition: transform .2s;
+  }
+  .edit-modal.show .edit-modal-content { transform: scale(1); }
+  .edit-modal-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
+  .edit-modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .edit-modal-actions .btn-primary, .edit-modal-actions .btn-ghost { padding: 12px; font-size: 14px; }
+
+  /* ── CUSTOM DATE RANGE ── */
+  .date-range-input {
+    display: none; gap: 8px; align-items: center;
+    margin: 0 0 12px; padding: 0;
+  }
+  .date-range-input.show { display: flex; }
+  .date-range-input input[type="date"] {
+    flex: 1; background: rgba(255,255,255,.1);
+    border: 0.5px solid rgba(255,255,255,.2);
+    border-radius: 8px; padding: 8px 10px;
+    color: #fff; font-size: 12px; font-family: inherit;
+    -webkit-appearance: none; outline: none;
+    color-scheme: dark;
+  }
+  .date-range-input span { color: rgba(255,255,255,.5); font-size: 11px; }
+
+  /* ── HISTORY SCREEN ── */
+  .history-month-header {
+    padding: 14px 20px 8px;
+    font-size: 12px; font-weight: 700; color: var(--text2);
+    text-transform: uppercase; letter-spacing: .06em;
+    background: var(--bg);
+    position: sticky; top: 0; z-index: 5;
+  }
+  .history-empty {
+    text-align: center; padding: 60px 20px; color: var(--text3);
+  }
+  .history-search {
+    margin: 0 16px 12px; padding: 10px 14px;
+    background: var(--card); border: 1.5px solid var(--border);
+    border-radius: 12px; font-size: 14px; color: var(--text);
+    width: calc(100% - 32px); outline: none; font-family: inherit;
+  }
+
   /* Scrollbar hide */
   ::-webkit-scrollbar { display: none; }
   * { scrollbar-width: none; }
@@ -471,7 +617,38 @@
 
   <!-- STATUS BAR -->
   <div class="status-bar">
-    <span class="status-brand">✂ DreiLab</span>
+    <div class="status-brand">
+      <svg class="brand-logo" viewBox="0 0 180 70" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="DreiLab">
+        <!-- DREI text - bold industrial style -->
+        <g fill="#fff">
+          <!-- D -->
+          <path d="M2 8 L2 48 L18 48 Q30 48 30 28 Q30 8 18 8 Z M10 16 L18 16 Q22 16 22 28 Q22 40 18 40 L10 40 Z" />
+          <!-- R -->
+          <path d="M36 8 L36 48 L44 48 L44 32 L48 32 L54 48 L62 48 L55 30 Q60 27 60 20 Q60 8 50 8 Z M44 16 L50 16 Q52 16 52 20 Q52 24 50 24 L44 24 Z" />
+          <!-- E -->
+          <path d="M66 8 L66 48 L92 48 L92 40 L74 40 L74 32 L88 32 L88 24 L74 24 L74 16 L92 16 L92 8 Z" />
+          <!-- I -->
+          <path d="M98 8 L98 48 L106 48 L106 8 Z" />
+        </g>
+        <!-- LAB small subtitle -->
+        <g fill="#fff" opacity=".9">
+          <text x="44" y="66" font-family="-apple-system, sans-serif" font-size="15" font-weight="700" letter-spacing="4">LAB</text>
+        </g>
+        <!-- Circular emblem with barber pole -->
+        <g transform="translate(140, 28)">
+          <circle cx="0" cy="0" r="22" stroke="#fff" stroke-width="2" fill="none"/>
+          <!-- Barber pole - vertical rectangle -->
+          <rect x="-6" y="-15" width="12" height="30" rx="1.5" stroke="#fff" stroke-width="1.5" fill="none"/>
+          <!-- Diagonal stripes inside pole -->
+          <line x1="-5" y1="-10" x2="5" y2="-4" stroke="#fff" stroke-width="1.4"/>
+          <line x1="-5" y1="-2" x2="5" y2="4" stroke="#fff" stroke-width="1.4"/>
+          <line x1="-5" y1="6" x2="5" y2="12" stroke="#fff" stroke-width="1.4"/>
+          <!-- Top and bottom caps -->
+          <line x1="-7" y1="-15" x2="7" y2="-15" stroke="#fff" stroke-width="1.5"/>
+          <line x1="-7" y1="15" x2="7" y2="15" stroke="#fff" stroke-width="1.5"/>
+        </g>
+      </svg>
+    </div>
     <span class="status-date" id="statusDate"></span>
   </div>
 
@@ -616,6 +793,15 @@
                 <span class="yn-text">Ні, не прийшов</span>
               </div>
             </div>
+            <div class="yn-divider"></div>
+            <!-- QUICK SOURCE CHIPS -->
+            <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Звідки прийшов клієнт?</div>
+            <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Один варіант · необов'язково</div>
+            <div class="quick-chips" id="quick-source-chips" style="padding:0;margin-bottom:18px"></div>
+            <!-- QUICK TYPE CHIPS -->
+            <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Який це клієнт?</div>
+            <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Один варіант · необов'язково</div>
+            <div class="quick-chips" id="quick-type-chips" style="padding:0"></div>
           </div>
         </div>
 
@@ -714,15 +900,26 @@
 
     <!-- ══════════════════════════════════ STATS ══════════════════════════════════ -->
     <div class="screen" id="screen-stats">
-      <div class="screen-header">
+      <div class="screen-header" style="position:relative">
         <h1>Статистика 📊</h1>
         <p>Аналітика вашої роботи</p>
-        <div style="height:12px"></div>
+        <div class="header-actions">
+          <button class="icon-btn" onclick="switchTab('history')" title="Історія">📜</button>
+          <button class="icon-btn" onclick="switchTab('settings')" title="Налаштування">⚙</button>
+        </div>
+        <div style="height:14px"></div>
         <div class="period-toggle light" id="stats-period-toggle">
           <div class="period-slider" id="stats-period-slider"></div>
           <button class="period-btn active" onclick="setStatsPeriod('week',this,0)">Тиждень</button>
           <button class="period-btn" onclick="setStatsPeriod('month',this,1)">Місяць</button>
           <button class="period-btn" onclick="setStatsPeriod('year',this,2)">Рік</button>
+          <button class="period-btn" onclick="setStatsPeriod('custom',this,3)">Діапазон</button>
+        </div>
+        <div class="period-date-range" id="stats-date-range" style="margin: 8px 0 0;color:rgba(255,255,255,.4)"></div>
+        <div class="date-range-input" id="custom-date-range">
+          <input type="date" id="date-from" onchange="onCustomDateChange()">
+          <span>—</span>
+          <input type="date" id="date-to" onchange="onCustomDateChange()">
         </div>
       </div>
 
@@ -787,6 +984,50 @@
       </div>
     </div>
 
+    <!-- ══════════════════════════════════ SETTINGS ══════════════════════════════════ -->
+    <div class="screen" id="screen-settings">
+      <div class="screen-header" style="position:relative">
+        <button class="icon-btn" onclick="switchTab('stats')" style="position:absolute;left:14px;top:14px">‹</button>
+        <h1 style="text-align:center">Налаштування</h1>
+        <p style="text-align:center">Послуги та ціни</p>
+      </div>
+      <div class="content">
+        <div class="card">
+          <div style="padding:14px 16px 8px">
+            <div class="card-title" style="margin:0">Послуги</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px">Натисни на послугу щоб змінити ціну</div>
+          </div>
+          <div id="settings-services-list"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-pad">
+            <div class="card-title">Sync та дані</div>
+            <div class="field">
+              <label>URL Apps Script</label>
+              <input type="url" id="script-url-2" placeholder="https://script.google.com/..." style="font-size:12px">
+            </div>
+            <div style="height:10px"></div>
+            <button class="btn-primary" onclick="saveScriptUrl2()" style="font-size:14px;padding:12px">Зберегти URL</button>
+          </div>
+        </div>
+
+        <button class="btn-ghost" onclick="resetServicesToDefaults()">↺ Скинути послуги на заводські</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════ HISTORY ══════════════════════════════════ -->
+    <div class="screen" id="screen-history">
+      <div class="screen-header" style="position:relative">
+        <button class="icon-btn" onclick="switchTab('stats')" style="position:absolute;left:14px;top:14px">‹</button>
+        <h1 style="text-align:center">Історія записів</h1>
+        <p style="text-align:center" id="history-count">0 записів</p>
+      </div>
+      <div style="height:12px"></div>
+      <input type="text" class="history-search" id="history-search" placeholder="Пошук за датою (напр. 04.05)" oninput="renderHistory()">
+      <div id="history-list"></div>
+    </div>
+
   </div><!-- /screens -->
 
   <!-- TAB BAR -->
@@ -806,6 +1047,26 @@
   </div>
 
 </div><!-- /app -->
+
+<!-- EDIT SERVICE MODAL -->
+<div class="edit-modal" id="edit-modal">
+  <div class="edit-modal-content">
+    <div class="edit-modal-title" id="edit-modal-title">Редагувати послугу</div>
+    <div class="field" id="edit-name-field">
+      <label>Назва</label>
+      <input type="text" id="edit-svc-name">
+    </div>
+    <div style="height:12px"></div>
+    <div class="field">
+      <label>Ціна (zł)</label>
+      <input type="number" id="edit-svc-price" inputmode="numeric">
+    </div>
+    <div class="edit-modal-actions">
+      <button class="btn-ghost" onclick="closeEditModal()">Скасувати</button>
+      <button class="btn-primary" onclick="saveServiceEdit()">Зберегти</button>
+    </div>
+  </div>
+</div>
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
@@ -885,14 +1146,28 @@ document.addEventListener('DOMContentLoaded', () => {
 function switchTab(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-  document.getElementById('screen-' + name).classList.add('active');
-  document.getElementById('tab-' + name).classList.add('active');
+  const screen = document.getElementById('screen-' + name);
+  if (screen) screen.classList.add('active');
+
+  // Highlight tabs (only main 3 in tab bar)
+  if (['home','add','stats'].includes(name)) {
+    const tab = document.getElementById('tab-' + name);
+    if (tab) tab.classList.add('active');
+  } else {
+    // Settings and History — keep stats tab highlighted since they're sub-screens
+    document.getElementById('tab-stats').classList.add('active');
+  }
+
+  if (name === 'home') renderHome();
   if (name === 'stats') {
     renderStats();
-    // Fix #3 — wait for screen to be visible before measuring
-    setTimeout(() => initSlider('stats-period-toggle', 'stats-period-slider'), 80);
+    setTimeout(() => {
+      initSlider('stats-period-toggle', 'stats-period-slider');
+      updateStatsDateLabel(currentStatsPeriod);
+    }, 80);
   }
-  if (name === 'home') renderHome();
+  if (name === 'settings') renderSettings();
+  if (name === 'history') renderHistory();
 }
 
 function goHome() { switchTab('home'); }
@@ -1036,12 +1311,53 @@ function changeCounter(containerId, id, delta) {
 function autoFillRevenue() {
   let total = 0;
   services.forEach(s => { total += (serviceCounters[s.id] || 0) * s.price; });
+
   const field = currentMode === 'client'
     ? document.getElementById('field-revenue-client')
     : document.getElementById('field-revenue');
-  if (field && (field.value === '' || field.value === '0') && total > 0) {
+  if (!field) return;
+
+  const currentVal = parseFloat(field.value) || 0;
+
+  // Remove any existing suggest UI
+  const existingSuggest = document.getElementById('revenue-suggest-box');
+  if (existingSuggest) existingSuggest.remove();
+
+  if (total === 0) return;
+
+  if (currentVal === 0 || field.value === '') {
+    // Empty field — auto-fill the total
     field.value = total;
+  } else if (Math.abs(currentVal - total) > 0.01) {
+    // User has typed something — show "+X zł" button to add services total
+    const wrapper = field.parentElement;
+    const box = document.createElement('div');
+    box.id = 'revenue-suggest-box';
+    box.className = 'revenue-suggest';
+    box.innerHTML = `
+      <button class="revenue-suggest-btn" onclick="acceptRevenueSuggest(${total})">
+        <span class="plus">+</span>${total} zł — додати до виручки
+      </button>
+      <button class="revenue-suggest-dismiss" onclick="dismissRevenueSuggest()" title="Закрити">×</button>
+    `;
+    wrapper.appendChild(box);
   }
+}
+
+function acceptRevenueSuggest(amount) {
+  const field = currentMode === 'client'
+    ? document.getElementById('field-revenue-client')
+    : document.getElementById('field-revenue');
+  if (!field) return;
+  const current = parseFloat(field.value) || 0;
+  field.value = current + amount;
+  dismissRevenueSuggest();
+  showToast('✓ Додано ' + amount + ' zł');
+}
+
+function dismissRevenueSuggest() {
+  const el = document.getElementById('revenue-suggest-box');
+  if (el) el.remove();
 }
 
 function updateServicesTotal() {
@@ -1069,27 +1385,27 @@ function setMode(mode, btn) {
   btn.classList.add('active');
   const clientCard = document.getElementById('client-yn-card');
   const dayCard    = document.getElementById('day-base-card');
-  const srcCounter = document.getElementById('sources-list-counter');
-  const srcRadio   = document.getElementById('sources-list-radio');
-  const typCounter = document.getElementById('types-list-counter');
-  const typRadio   = document.getElementById('types-list-radio');
+  const sectionSources = document.getElementById('section-sources');
+  const sectionTypes   = document.getElementById('section-types');
 
   if (mode === 'client') {
     clientCard.style.display = 'block';
     dayCard.style.display = 'none';
-    srcCounter.style.display = 'none';  srcRadio.style.display = 'block';
-    typCounter.style.display = 'none';  typRadio.style.display = 'block';
-    document.querySelector('#section-sources .collapse-title').textContent = 'Джерело клієнта';
-    document.querySelector('#section-types .collapse-title').textContent = 'Тип клієнта';
+    // In client mode, source/type are quick chips inside YN card — hide collapse sections
+    sectionSources.style.display = 'none';
+    sectionTypes.style.display = 'none';
   } else {
     clientCard.style.display = 'none';
     dayCard.style.display = 'block';
-    srcCounter.style.display = 'block'; srcRadio.style.display = 'none';
-    typCounter.style.display = 'block'; typRadio.style.display = 'none';
-    document.querySelector('#section-sources .collapse-title').textContent = 'Джерела клієнтів';
-    document.querySelector('#section-types .collapse-title').textContent = 'Тип клієнтів';
+    // In day mode show counter sections
+    sectionSources.style.display = 'block';
+    sectionTypes.style.display = 'block';
+    document.getElementById('sources-list-counter').style.display = 'block';
+    document.getElementById('sources-list-radio').style.display = 'none';
+    document.getElementById('types-list-counter').style.display = 'block';
+    document.getElementById('types-list-radio').style.display = 'none';
   }
-  renderRadioLists();
+  renderQuickChips();
 }
 
 // YN state
@@ -1098,32 +1414,28 @@ let ynState = { booked: null, came: null };
 let radioSource = null;
 let radioType   = null;
 
-function renderRadioLists() {
-  const srcEl = document.getElementById('sources-list-radio');
-  const typEl = document.getElementById('types-list-radio');
+function renderQuickChips() {
+  const srcEl = document.getElementById('quick-source-chips');
+  const typEl = document.getElementById('quick-type-chips');
   if (!srcEl || !typEl) return;
 
   srcEl.innerHTML = SOURCES_DEFAULT.map(s => `
-    <div class="radio-row ${radioSource === s.id ? 'sel' : ''}" onclick="selectRadio('source','${s.id}')">
-      <span class="radio-name">${s.name}</span>
-      <div class="radio-circle"></div>
-    </div>`).join('');
+    <div class="quick-chip ${radioSource === s.id ? 'sel' : ''}" onclick="selectQuickChip('source','${s.id}')">${s.name}</div>
+  `).join('');
 
   typEl.innerHTML = TYPES_DEFAULT.map(t => `
-    <div class="radio-row ${radioType === t.id ? 'sel' : ''}" onclick="selectRadio('type','${t.id}')">
-      <div>
-        <div class="radio-name">${t.name}</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:2px">${t.sub}</div>
-      </div>
-      <div class="radio-circle"></div>
-    </div>`).join('');
+    <div class="quick-chip ${radioType === t.id ? 'sel' : ''}" onclick="selectQuickChip('type','${t.id}')">${t.name}</div>
+  `).join('');
 }
 
-function selectRadio(field, id) {
-  if (field === 'source') radioSource = radioSource === id ? null : id;
-  else radioType = radioType === id ? null : id;
-  renderRadioLists();
+function selectQuickChip(field, id) {
+  if (field === 'source') radioSource = (radioSource === id) ? null : id;
+  else                     radioType   = (radioType   === id) ? null : id;
+  renderQuickChips();
 }
+
+// Keep old radio render for backward compat (day mode doesn't use it now)
+function renderRadioLists() { renderQuickChips(); }
 
 function selectYN(field, val) {
   ynState[field] = val;
@@ -1370,7 +1682,41 @@ function setStatsPeriod(period, btn, idx) {
   document.querySelectorAll('#screen-stats .period-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   updateSlider(slider, toggle, idx);
+
+  // Custom date range UI
+  const customRange = document.getElementById('custom-date-range');
+  const dateLabel = document.getElementById('stats-date-range');
+  if (period === 'custom') {
+    customRange.classList.add('show');
+    if (dateLabel) dateLabel.textContent = '';
+    if (!customDateFrom) {
+      const today = new Date();
+      const monthAgo = new Date(today); monthAgo.setDate(today.getDate() - 30);
+      document.getElementById('date-from').value = monthAgo.toISOString().split('T')[0];
+      document.getElementById('date-to').value = today.toISOString().split('T')[0];
+      onCustomDateChange();
+    }
+  } else {
+    customRange.classList.remove('show');
+    updateStatsDateLabel(period);
+  }
   renderStats();
+}
+
+function updateStatsDateLabel(period) {
+  const el = document.getElementById('stats-date-range');
+  if (!el) return;
+  const now = new Date();
+  const fmt = d => `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}`;
+  if (period === 'week') {
+    const from = new Date(now); from.setDate(now.getDate() - 6);
+    el.textContent = `${fmt(from)} — ${fmt(now)}`;
+  } else if (period === 'month') {
+    const from = new Date(now.getFullYear(), now.getMonth(), 1);
+    el.textContent = `${fmt(from)} — ${fmt(now)}`;
+  } else {
+    el.textContent = `${now.getFullYear()} рік`;
+  }
 }
 
 function renderStats() {
@@ -1383,6 +1729,10 @@ function renderStats() {
     }
     if (currentStatsPeriod === 'month') {
       return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }
+    if (currentStatsPeriod === 'custom') {
+      if (!customDateFrom || !customDateTo) return false;
+      return e.date >= customDateFrom && e.date <= customDateTo;
     }
     return d.getFullYear() === now.getFullYear();
   });
@@ -1531,6 +1881,193 @@ async function syncToSheets(entry) {
     console.log('Sync error:', e);
   }
 }
+
+// ══════════════════════════════════════════════
+// SETTINGS — services CRUD
+// ══════════════════════════════════════════════
+
+const BASE_SERVICE_IDS = ['s1','s2','s3','s4','s5'];
+let editingServiceId = null;
+
+function renderSettings() {
+  const list = document.getElementById('settings-services-list');
+  if (!list) return;
+
+  list.innerHTML = services.map(s => {
+    const isBase = BASE_SERVICE_IDS.includes(s.id);
+    return `
+      <div class="settings-row">
+        <div class="svc-info" onclick="openServiceEdit('${s.id}')">
+          <div class="svc-name">${s.name}</div>
+          <div class="svc-price-tag">${s.price} zł</div>
+          ${isBase ? '<span class="svc-base-tag">Базова</span>' : ''}
+        </div>
+        <div class="svc-actions">
+          <button class="svc-action-btn" onclick="openServiceEdit('${s.id}')" title="Редагувати">✎</button>
+          ${!isBase ? `<button class="svc-action-btn delete" onclick="deleteService('${s.id}')" title="Видалити">🗑</button>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Sync URL field
+  const url = localStorage.getItem('dl_script_url') || '';
+  const urlField = document.getElementById('script-url-2');
+  if (urlField) urlField.value = url;
+}
+
+function openServiceEdit(id) {
+  editingServiceId = id;
+  const svc = services.find(s => s.id === id);
+  if (!svc) return;
+  const isBase = BASE_SERVICE_IDS.includes(id);
+
+  document.getElementById('edit-modal-title').textContent =
+    isBase ? `Редагувати ціну: ${svc.name}` : 'Редагувати послугу';
+
+  // Q2-a: base services — only price editable
+  const nameField = document.getElementById('edit-name-field');
+  nameField.style.display = isBase ? 'none' : 'flex';
+
+  document.getElementById('edit-svc-name').value = svc.name;
+  document.getElementById('edit-svc-price').value = svc.price;
+
+  document.getElementById('edit-modal').classList.add('show');
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('show');
+  editingServiceId = null;
+}
+
+function saveServiceEdit() {
+  if (!editingServiceId) return;
+  const svc = services.find(s => s.id === editingServiceId);
+  if (!svc) return;
+  const isBase = BASE_SERVICE_IDS.includes(editingServiceId);
+
+  const newPrice = parseInt(document.getElementById('edit-svc-price').value);
+  if (isNaN(newPrice) || newPrice < 0) {
+    showToast('Введи коректну ціну', true); return;
+  }
+
+  if (!isBase) {
+    const newName = document.getElementById('edit-svc-name').value.trim();
+    if (!newName) { showToast('Введи назву', true); return; }
+    svc.name = newName;
+  }
+  svc.price = newPrice;
+
+  localStorage.setItem('dl_services', JSON.stringify(services));
+  closeEditModal();
+  renderSettings();
+  showToast('✓ Збережено');
+}
+
+function deleteService(id) {
+  if (BASE_SERVICE_IDS.includes(id)) {
+    showToast('Базові послуги неможна видалити', true); return;
+  }
+  if (!confirm('Видалити цю послугу?')) return;
+  services = services.filter(s => s.id !== id);
+  delete serviceCounters[id];
+  localStorage.setItem('dl_services', JSON.stringify(services));
+  renderSettings();
+  showToast('Послугу видалено');
+}
+
+function resetServicesToDefaults() {
+  if (!confirm('Скинути послуги на заводські? Власні послуги будуть видалені.')) return;
+  services = JSON.parse(JSON.stringify(SERVICES_DEFAULT));
+  localStorage.setItem('dl_services', JSON.stringify(services));
+  serviceCounters = {};
+  services.forEach(s => serviceCounters[s.id] = 0);
+  renderSettings();
+  showToast('✓ Скинуто на заводські');
+}
+
+function saveScriptUrl2() {
+  const url = document.getElementById('script-url-2').value.trim();
+  if (!url) { showToast('Введи URL', true); return; }
+  localStorage.setItem('dl_script_url', url);
+  showToast('✓ URL збережено');
+}
+
+// ══════════════════════════════════════════════
+// HISTORY
+// ══════════════════════════════════════════════
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  const countEl = document.getElementById('history-count');
+  const search = (document.getElementById('history-search').value || '').toLowerCase().trim();
+
+  let filtered = [...entries];
+  if (search) {
+    filtered = filtered.filter(e => {
+      const d = new Date(e.date + 'T12:00:00');
+      const dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+      return dateStr.toLowerCase().includes(search) || e.date.includes(search);
+    });
+  }
+  filtered.sort((a, b) => new Date(b.date) - new Date(a.date) || b.createdAt.localeCompare(a.createdAt));
+
+  countEl.textContent = filtered.length + ' ' + pluralUk(filtered.length, 'запис','записи','записів');
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="history-empty">📭<br><br>Немає записів</div>`;
+    return;
+  }
+
+  // Group by month
+  const months = ['Січень','Лютий','Березень','Квітень','Травень','Червень','Липень','Серпень','Вересень','Жовтень','Листопад','Грудень'];
+  let html = '';
+  let currentMonth = '';
+  filtered.forEach(e => {
+    const d = new Date(e.date + 'T12:00:00');
+    const monthKey = `${months[d.getMonth()]} ${d.getFullYear()}`;
+    if (monthKey !== currentMonth) {
+      currentMonth = monthKey;
+      html += `<div class="history-month-header">${monthKey}</div>`;
+    }
+    const dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}`;
+    const topSrc = getTopSource(e);
+    html += `
+      <div class="entry-item" style="background:var(--card)" onclick="openAddForm('${e.id}')">
+        <div class="entry-dot"></div>
+        <div class="entry-main">
+          <div class="entry-title">${dateStr} — ${e.came || 0} з ${e.bookings || 0}</div>
+          <div class="entry-sub">${topSrc || (e.mode === 'client' ? '1 клієнт' : 'Підсумок дня')}</div>
+        </div>
+        <div class="entry-amount">${(e.revenue || 0).toLocaleString('uk')} zł</div>
+        <div class="entry-arrow">›</div>
+      </div>
+    `;
+  });
+  list.innerHTML = html;
+}
+
+function pluralUk(n, one, few, many) {
+  const mod10 = n % 10, mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+  return many;
+}
+
+// ══════════════════════════════════════════════
+// CUSTOM DATE RANGE in Stats
+// ══════════════════════════════════════════════
+
+let customDateFrom = null;
+let customDateTo = null;
+
+function onCustomDateChange() {
+  customDateFrom = document.getElementById('date-from').value;
+  customDateTo = document.getElementById('date-to').value;
+  if (currentStatsPeriod === 'custom') renderStats();
+}
+
+
 
 // ══════════════════════════════════════════════
 // TOAST
