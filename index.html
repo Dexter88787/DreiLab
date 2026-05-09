@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="DreiLab">
@@ -30,21 +30,25 @@
     --radius-sm: 10px;
     --tab-h: 72px;
   }
-  html, body { height: 100%; overflow: hidden; background: var(--navy); }
+  html { height: 100%; background: var(--navy); }
   body {
+    height: 100%; overflow: hidden; background: var(--navy);
     font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
-    color: var(--text);
-    background: var(--bg);
-    overscroll-behavior: none;
+    color: var(--text); overscroll-behavior: none;
   }
 
   /* ── APP SHELL ── */
-  #app { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; background: var(--bg); }
+  #app {
+    display: flex; flex-direction: column;
+    height: 100dvh; min-height: -webkit-fill-available;
+    overflow: hidden; background: var(--bg);
+  }
 
-  /* ── STATUS BAR ── */
+  /* ── STATUS BAR — fix #1 ── */
   .status-bar {
     background: var(--navy);
-    padding: env(safe-area-inset-top, 12px) 20px 10px;
+    padding-top: max(env(safe-area-inset-top, 0px), 14px);
+    padding-left: 20px; padding-right: 20px; padding-bottom: 10px;
     display: flex; justify-content: space-between; align-items: flex-end;
     flex-shrink: 0;
   }
@@ -98,27 +102,33 @@
   .period-btn {
     flex: 1; text-align: center; padding: 7px 4px;
     border-radius: 8px; font-size: 13px; font-weight: 500;
-    color: rgba(255,255,255,.4); border: none; background: transparent;
-    transition: color .2s ease, transform .15s ease; cursor: pointer;
+    color: rgba(255,255,255,.45); border: none; background: transparent;
+    transition: color .18s ease; cursor: pointer;
     position: relative; z-index: 1;
   }
-  .period-btn.active {
-    color: var(--navy); font-weight: 700;
-  }
-  .period-btn:not(.active):active { transform: scale(.9); }
+  .period-btn.active { color: var(--navy); font-weight: 700; }
+  .period-btn:not(.active):active { opacity: .6; }
   .period-slider {
     position: absolute; top: 3px; bottom: 3px;
     border-radius: 8px; background: var(--accent);
-    box-shadow: 0 2px 8px rgba(45,212,191,.4);
-    transition: left .22s cubic-bezier(.34,1.56,.64,1), width .22s ease;
+    box-shadow: 0 2px 8px rgba(45,212,191,.35);
+    transition: left .2s ease, width .2s ease;
     z-index: 0; pointer-events: none;
+  }
+  /* Stats screen — light toggle */
+  .period-toggle.light { background: #EFF3F8; margin: 0 0 0; }
+  .period-toggle.light .period-btn { color: var(--text2); }
+  .period-toggle.light .period-btn.active { color: var(--text); }
+  .period-toggle.light .period-slider {
+    background: var(--card);
+    box-shadow: 0 1px 5px rgba(0,0,0,.12);
   }
   @keyframes periodPop {
     0%   { transform: scale(1); }
-    40%  { transform: scale(1.06); }
+    35%  { transform: scale(1.05); }
     100% { transform: scale(1); }
   }
-  .period-btn.active { animation: periodPop .3s ease forwards; }
+  .period-btn.active { animation: periodPop .25s ease forwards; }
 
   /* ── STATS GRID ── */
   .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -422,6 +432,34 @@
   .config-text h3 { color: var(--accent); font-size: 14px; font-weight: 700; }
   .config-text p { color: rgba(255,255,255,.6); font-size: 12px; margin-top: 3px; line-height: 1.4; }
 
+  .period-date-range {
+    text-align: center; font-size: 11px; color: rgba(255,255,255,.4);
+    margin: -10px 20px 12px; letter-spacing: .02em;
+  }
+  /* Radio-style single select for client mode */
+  .radio-list { padding: 4px 0 8px; }
+  .radio-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; border-bottom: 0.5px solid var(--border);
+    cursor: pointer; transition: background .12s;
+    -webkit-user-select: none;
+  }
+  .radio-row:last-child { border-bottom: none; }
+  .radio-row:active { background: #F8FAFC; }
+  .radio-name { font-size: 14px; color: var(--text); font-weight: 500; }
+  .radio-circle {
+    width: 22px; height: 22px; border-radius: 11px;
+    border: 2px solid var(--border); background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all .15s;
+  }
+  .radio-row.sel .radio-circle {
+    border-color: var(--accent2); background: var(--accent2);
+  }
+  .radio-row.sel .radio-circle::after {
+    content: ''; width: 8px; height: 8px; border-radius: 4px;
+    background: #fff;
+  }
   /* Scrollbar hide */
   ::-webkit-scrollbar { display: none; }
   * { scrollbar-width: none; }
@@ -452,6 +490,7 @@
           <button class="period-btn" onclick="setPeriod('week',this,1)">Тиждень</button>
           <button class="period-btn" onclick="setPeriod('month',this,2)">Місяць</button>
         </div>
+        <div class="period-date-range" id="home-date-range"></div>
       </div>
 
       <div class="content">
@@ -639,13 +678,15 @@
         <div class="card" id="section-sources">
           <div class="collapse-header" onclick="toggleSection('sources')">
             <div class="collapse-left">
-              <span class="collapse-title">Джерела клієнтів</span>
+              <span class="collapse-title">Джерело клієнта</span>
               <span class="optional-tag">необов'язково</span>
             </div>
             <span class="collapse-chevron" id="chevron-sources">▼</span>
           </div>
           <div class="collapse-body" id="body-sources">
-            <div class="counter-list" id="sources-list"></div>
+            <!-- day mode: counters | client mode: radio -->
+            <div id="sources-list-counter" class="counter-list"></div>
+            <div id="sources-list-radio" class="radio-list" style="display:none"></div>
           </div>
         </div>
 
@@ -653,13 +694,14 @@
         <div class="card" id="section-types">
           <div class="collapse-header" onclick="toggleSection('types')">
             <div class="collapse-left">
-              <span class="collapse-title">Тип клієнтів</span>
+              <span class="collapse-title">Тип клієнта</span>
               <span class="optional-tag">необов'язково</span>
             </div>
             <span class="collapse-chevron" id="chevron-types">▼</span>
           </div>
           <div class="collapse-body" id="body-types">
-            <div class="counter-list" id="types-list"></div>
+            <div id="types-list-counter" class="counter-list"></div>
+            <div id="types-list-radio" class="radio-list" style="display:none"></div>
           </div>
         </div>
 
@@ -676,10 +718,11 @@
         <h1>Статистика 📊</h1>
         <p>Аналітика вашої роботи</p>
         <div style="height:12px"></div>
-        <div class="period-toggle">
-          <button class="period-btn active" onclick="setStatsPeriod('week',this)">Тиждень</button>
-          <button class="period-btn" onclick="setStatsPeriod('month',this)">Місяць</button>
-          <button class="period-btn" onclick="setStatsPeriod('year',this)">Рік</button>
+        <div class="period-toggle light" id="stats-period-toggle">
+          <div class="period-slider" id="stats-period-slider"></div>
+          <button class="period-btn active" onclick="setStatsPeriod('week',this,0)">Тиждень</button>
+          <button class="period-btn" onclick="setStatsPeriod('month',this,1)">Місяць</button>
+          <button class="period-btn" onclick="setStatsPeriod('year',this,2)">Рік</button>
         </div>
       </div>
 
@@ -752,7 +795,7 @@
       <span class="tab-icon">🏠</span>
       <span class="tab-label">Головна</span>
     </button>
-    <button class="tab-item" onclick="switchTab('add')" id="tab-add">
+    <button class="tab-item" onclick="openAddForm()" id="tab-add">
       <span class="tab-icon">➕</span>
       <span class="tab-label">Додати</span>
     </button>
@@ -824,8 +867,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const url = localStorage.getItem('dl_script_url');
   if (url) document.getElementById('script-url').value = url;
 
-  // Init period slider
-  setTimeout(() => initSlider('home-period-toggle', 'home-period-slider'), 50);
+  // Init period sliders + date range
+  setTimeout(() => {
+    initSlider('home-period-toggle', 'home-period-slider');
+    initSlider('stats-period-toggle', 'stats-period-slider');
+    updateDateRange('day');
+  }, 80);
 
   renderHome();
   renderForm();
@@ -840,7 +887,11 @@ function switchTab(name) {
   document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
-  if (name === 'stats') renderStats();
+  if (name === 'stats') {
+    renderStats();
+    // Fix #3 — wait for screen to be visible before measuring
+    setTimeout(() => initSlider('stats-period-toggle', 'stats-period-slider'), 80);
+  }
   if (name === 'home') renderHome();
 }
 
@@ -870,13 +921,12 @@ function openAddForm(id = null) {
 // ══════════════════════════════════════════════
 
 function renderForm() {
-  // Set today's date
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('field-date').value = today;
-
   renderCounters('services-list', services, serviceCounters, true);
-  renderCounters('sources-list', SOURCES_DEFAULT, sourceCounters, false);
-  renderCounters('types-list', TYPES_DEFAULT, typeCounters, false, true);
+  renderCounters('sources-list-counter', SOURCES_DEFAULT, sourceCounters, false);
+  renderCounters('types-list-counter', TYPES_DEFAULT, typeCounters, false, true);
+  renderRadioLists();
 }
 
 function resetForm() {
@@ -906,10 +956,12 @@ function resetForm() {
   services.forEach(s => serviceCounters[s.id] = 0);
   SOURCES_DEFAULT.forEach(s => sourceCounters[s.id] = 0);
   TYPES_DEFAULT.forEach(t => typeCounters[t.id] = 0);
+  radioSource = null; radioType = null;
 
   renderCounters('services-list', services, serviceCounters, true);
-  renderCounters('sources-list', SOURCES_DEFAULT, sourceCounters, false);
-  renderCounters('types-list', TYPES_DEFAULT, typeCounters, false, true);
+  renderCounters('sources-list-counter', SOURCES_DEFAULT, sourceCounters, false);
+  renderCounters('types-list-counter', TYPES_DEFAULT, typeCounters, false, true);
+  renderRadioLists();
   updateServicesTotal();
 
   // Close sections
@@ -968,14 +1020,28 @@ function renderCounters(containerId, items, counters, withSubtotal, withSub = fa
 
 function changeCounter(containerId, id, delta) {
   const map = containerId === 'services-list' ? serviceCounters :
-              containerId === 'sources-list' ? sourceCounters : typeCounters;
+              containerId === 'sources-list-counter' ? sourceCounters : typeCounters;
   map[id] = Math.max(0, (map[id] || 0) + delta);
   const valEl = document.getElementById(`cv-${containerId}-${id}`);
   if (valEl) {
     valEl.textContent = map[id];
     valEl.className = 'c-val' + (map[id] > 0 ? ' on' : '');
   }
-  if (containerId === 'services-list') updateServicesTotal();
+  if (containerId === 'services-list') {
+    updateServicesTotal();
+    autoFillRevenue();
+  }
+}
+
+function autoFillRevenue() {
+  let total = 0;
+  services.forEach(s => { total += (serviceCounters[s.id] || 0) * s.price; });
+  const field = currentMode === 'client'
+    ? document.getElementById('field-revenue-client')
+    : document.getElementById('field-revenue');
+  if (field && (field.value === '' || field.value === '0') && total > 0) {
+    field.value = total;
+  }
 }
 
 function updateServicesTotal() {
@@ -1002,18 +1068,62 @@ function setMode(mode, btn) {
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   const clientCard = document.getElementById('client-yn-card');
-  const dayCard = document.getElementById('day-base-card');
+  const dayCard    = document.getElementById('day-base-card');
+  const srcCounter = document.getElementById('sources-list-counter');
+  const srcRadio   = document.getElementById('sources-list-radio');
+  const typCounter = document.getElementById('types-list-counter');
+  const typRadio   = document.getElementById('types-list-radio');
+
   if (mode === 'client') {
     clientCard.style.display = 'block';
     dayCard.style.display = 'none';
+    srcCounter.style.display = 'none';  srcRadio.style.display = 'block';
+    typCounter.style.display = 'none';  typRadio.style.display = 'block';
+    document.querySelector('#section-sources .collapse-title').textContent = 'Джерело клієнта';
+    document.querySelector('#section-types .collapse-title').textContent = 'Тип клієнта';
   } else {
     clientCard.style.display = 'none';
     dayCard.style.display = 'block';
+    srcCounter.style.display = 'block'; srcRadio.style.display = 'none';
+    typCounter.style.display = 'block'; typRadio.style.display = 'none';
+    document.querySelector('#section-sources .collapse-title').textContent = 'Джерела клієнтів';
+    document.querySelector('#section-types .collapse-title').textContent = 'Тип клієнтів';
   }
+  renderRadioLists();
 }
 
 // YN state
 let ynState = { booked: null, came: null };
+// Radio state for client mode
+let radioSource = null;
+let radioType   = null;
+
+function renderRadioLists() {
+  const srcEl = document.getElementById('sources-list-radio');
+  const typEl = document.getElementById('types-list-radio');
+  if (!srcEl || !typEl) return;
+
+  srcEl.innerHTML = SOURCES_DEFAULT.map(s => `
+    <div class="radio-row ${radioSource === s.id ? 'sel' : ''}" onclick="selectRadio('source','${s.id}')">
+      <span class="radio-name">${s.name}</span>
+      <div class="radio-circle"></div>
+    </div>`).join('');
+
+  typEl.innerHTML = TYPES_DEFAULT.map(t => `
+    <div class="radio-row ${radioType === t.id ? 'sel' : ''}" onclick="selectRadio('type','${t.id}')">
+      <div>
+        <div class="radio-name">${t.name}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">${t.sub}</div>
+      </div>
+      <div class="radio-circle"></div>
+    </div>`).join('');
+}
+
+function selectRadio(field, id) {
+  if (field === 'source') radioSource = radioSource === id ? null : id;
+  else radioType = radioType === id ? null : id;
+  renderRadioLists();
+}
 
 function selectYN(field, val) {
   ynState[field] = val;
@@ -1028,21 +1138,30 @@ function selectYN(field, val) {
 }
 
 function initSlider(toggleId, sliderId) {
-  const toggle = document.getElementById(toggleId);
-  const slider = document.getElementById(sliderId);
-  if (!toggle || !slider) return;
-  const btns = toggle.querySelectorAll('.period-btn');
-  const activeIdx = [...btns].findIndex(b => b.classList.contains('active'));
-  updateSlider(slider, toggle, activeIdx);
+  requestAnimationFrame(() => {
+    const toggle = document.getElementById(toggleId);
+    const slider = document.getElementById(sliderId);
+    if (!toggle || !slider) return;
+    const activeIdx = [...toggle.querySelectorAll('.period-btn')]
+      .findIndex(b => b.classList.contains('active'));
+    // No transition on init
+    slider.style.transition = 'none';
+    updateSlider(slider, toggle, activeIdx);
+    requestAnimationFrame(() => {
+      slider.style.transition = '';
+    });
+  });
 }
 
 function updateSlider(slider, toggle, idx) {
   const btns = toggle.querySelectorAll('.period-btn');
   if (!btns[idx]) return;
-  const toggleRect = toggle.getBoundingClientRect();
-  const btnRect = btns[idx].getBoundingClientRect();
-  slider.style.left = (btnRect.left - toggleRect.left) + 'px';
-  slider.style.width = btnRect.width + 'px';
+  requestAnimationFrame(() => {
+    const toggleRect = toggle.getBoundingClientRect();
+    const btnRect = btns[idx].getBoundingClientRect();
+    slider.style.left = (btnRect.left - toggleRect.left) + 'px';
+    slider.style.width = btnRect.width + 'px';
+  });
 }
 
 function addCustomService() {
@@ -1085,17 +1204,26 @@ function saveEntry() {
     came = parseInt(document.getElementById('field-came').value) || 0;
     revenue = parseFloat(document.getElementById('field-revenue').value) || 0;
     if (!date) { showToast('Вибери дату', true); return; }
+    // Fix #11: error only if ALL are zero
     if (bookings === 0 && came === 0 && revenue === 0) {
-      showToast('Заповни хоча б одне поле', true); return;
+      const hasServices = Object.values(serviceCounters).some(v => v > 0);
+      if (!hasServices) { showToast('Заповни хоча б одне поле', true); return; }
     }
   }
+
+  const sourcesData = currentMode === 'client'
+    ? (radioSource ? { [radioSource]: 1 } : {})
+    : { ...sourceCounters };
+  const typesData = currentMode === 'client'
+    ? (radioType ? { [radioType]: 1 } : {})
+    : { ...typeCounters };
 
   const entry = {
     id: editingId || ('e' + Date.now()),
     date, bookings, came, revenue,
     services: { ...serviceCounters },
-    sources: { ...sourceCounters },
-    types: { ...typeCounters },
+    sources: sourcesData,
+    types: typesData,
     mode: currentMode,
     createdAt: new Date().toISOString(),
   };
@@ -1134,7 +1262,24 @@ function setPeriod(period, btn, idx) {
   document.querySelectorAll('#screen-home .period-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   updateSlider(slider, toggle, idx);
+  updateDateRange(period);
   renderHome();
+}
+
+function updateDateRange(period) {
+  const el = document.getElementById('home-date-range');
+  if (!el) return;
+  const now = new Date();
+  const fmt = d => `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}`;
+  if (period === 'day') {
+    el.textContent = fmt(now);
+  } else if (period === 'week') {
+    const from = new Date(now); from.setDate(now.getDate() - 6);
+    el.textContent = `${fmt(from)} — ${fmt(now)}`;
+  } else {
+    const from = new Date(now.getFullYear(), now.getMonth(), 1);
+    el.textContent = `${fmt(from)} — ${fmt(now)}`;
+  }
 }
 
 function getFilteredEntries(period) {
@@ -1218,10 +1363,13 @@ function sumTypeAcross(entries, typeId) {
 // STATS
 // ══════════════════════════════════════════════
 
-function setStatsPeriod(period, btn) {
+function setStatsPeriod(period, btn, idx) {
   currentStatsPeriod = period;
+  const toggle = document.getElementById('stats-period-toggle');
+  const slider = document.getElementById('stats-period-slider');
   document.querySelectorAll('#screen-stats .period-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  updateSlider(slider, toggle, idx);
   renderStats();
 }
 
